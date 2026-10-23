@@ -52,7 +52,11 @@ import type {
   ProjectedTransaction,
   TransactionCalendarResponse,
   Budget,
+  BudgetPlanCellWrite,
+  BudgetSuggestionMethod,
   BudgetVsActual,
+  BudgetYearPlan,
+  BudgetYearSuggestion,
   Rule,
   RuleAction,
   RuleConditionNode,
@@ -1282,6 +1286,52 @@ export const budgets = {
   },
   comparison: async (month?: string): Promise<BudgetVsActual[]> => {
     const { data } = await api.get('/budgets/comparison', { params: { month } })
+    return data
+  },
+  // The API serialises Decimals as strings ("250.50"); the plan screens do
+  // arithmetic on them, so convert once here.
+  yearPlan: async (year: number): Promise<BudgetYearPlan> => {
+    const { data } = await api.get('/budgets/year-plan', { params: { year } })
+    const num = (v: unknown) => Number(v)
+    const numOrNull = (v: unknown) => (v == null ? null : Number(v))
+    return {
+      ...data,
+      planned_total: num(data.planned_total),
+      actual_total: num(data.actual_total),
+      planned_by_month: data.planned_by_month.map(num),
+      actual_by_month: data.actual_by_month.map(num),
+      rows: data.rows.map((r: BudgetYearPlan['rows'][number]) => ({
+        ...r,
+        planned_total: num(r.planned_total),
+        actual_total: num(r.actual_total),
+        cells: r.cells.map((c) => ({ ...c, planned: numOrNull(c.planned), actual: num(c.actual) })),
+      })),
+    }
+  },
+  yearSuggestion: async (
+    year: number,
+    lookbackMonths: number,
+    method: BudgetSuggestionMethod,
+  ): Promise<BudgetYearSuggestion> => {
+    const { data } = await api.get('/budgets/year-plan/suggestion', {
+      params: { year, lookback_months: lookbackMonths, method },
+    })
+    return {
+      ...data,
+      rows: data.rows.map((r: BudgetYearSuggestion['rows'][number]) => ({
+        ...r,
+        history_average: Number(r.history_average),
+        history_median: Number(r.history_median),
+        proposed: r.proposed.map(Number),
+        existing: r.existing.map((v) => (v == null ? null : Number(v))),
+      })),
+    }
+  },
+  applyYearPlan: async (
+    year: number,
+    cells: BudgetPlanCellWrite[],
+  ): Promise<{ saved: number; deleted: number }> => {
+    const { data } = await api.put('/budgets/year-plan', { year, cells })
     return data
   },
 }
