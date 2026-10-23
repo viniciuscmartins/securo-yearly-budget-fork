@@ -85,6 +85,8 @@
   "GET /api/auth/passkeys": 401,
   "GET /api/budgets": 401,
   "GET /api/budgets/comparison": 401,
+  "GET /api/budgets/year-plan": 401,
+  "GET /api/budgets/year-plan/suggestion": 401,
   "GET /api/categories": 401,
   "GET /api/categories/{category_id}/rule-usage": 401,
   "GET /api/categories/{category_id}/usage": 401,
@@ -316,6 +318,7 @@
   "POST /api/workspaces/{workspace_id}/archive": 401,
   "POST /api/workspaces/{workspace_id}/members": 401,
   "PUT /api/agents/{agent_id}/tools": 401,
+  "PUT /api/budgets/year-plan": 401,
   "PUT /api/reconciliation/rules/{node}/order": 401
  },
  "empty": {
@@ -384,6 +387,7 @@
   "POST /api/transactions/{transaction_id}/create-counterpart": 422,
   "POST /api/workspaces": 422,
   "POST /api/workspaces/{workspace_id}/members": 422,
+  "PUT /api/budgets/year-plan": 422,
   "PUT /api/reconciliation/rules/{node}/order": 422
  },
  "ok": {
@@ -472,6 +476,8 @@
   "GET /api/auth/passkeys": 200,
   "GET /api/budgets": 200,
   "GET /api/budgets/comparison": 200,
+  "GET /api/budgets/year-plan": 200,
+  "GET /api/budgets/year-plan/suggestion": 200,
   "GET /api/categories": 200,
   "GET /api/categories/{category_id}/rule-usage": 200,
   "GET /api/categories/{category_id}/usage": 200,
@@ -701,6 +707,7 @@
   "POST /api/workspaces/{workspace_id}/archive": 400,
   "POST /api/workspaces/{workspace_id}/members": 400,
   "PUT /api/agents/{agent_id}/tools": 200,
+  "PUT /api/budgets/year-plan": 200,
   "PUT /api/reconciliation/rules/{node}/order": 400
  },
  "unknown_id": {
@@ -1044,6 +1051,7 @@
   "POST /api/workspaces/{workspace_id}/archive": 403,
   "POST /api/workspaces/{workspace_id}/members": 403,
   "PUT /api/agents/{agent_id}/tools": 403,
+  "PUT /api/budgets/year-plan": 403,
   "PUT /api/reconciliation/rules/{node}/order": 403
  }
 }

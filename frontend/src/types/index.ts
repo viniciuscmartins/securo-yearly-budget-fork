@@ -801,6 +801,63 @@ export interface BudgetVsActual {
   is_recurring: boolean
 }
 
+export interface BudgetYearCell {
+  month: number // 1..12
+  planned: number | null // null = no budget set
+  actual: number
+}
+
+export interface BudgetYearRow {
+  category_id: string
+  category_name: string
+  category_icon: string
+  category_color: string
+  group_id: string | null
+  group_name: string | null
+  cells: BudgetYearCell[] // 12 entries, January first
+  planned_total: number
+  actual_total: number
+}
+
+export interface BudgetYearPlan {
+  year: number
+  rows: BudgetYearRow[]
+  planned_by_month: number[]
+  actual_by_month: number[]
+  planned_total: number
+  actual_total: number
+}
+
+export type BudgetSuggestionMethod = 'median' | 'average' | 'seasonal'
+
+export interface BudgetSuggestionRow {
+  category_id: string
+  category_name: string
+  category_icon: string
+  category_color: string
+  group_id: string | null
+  group_name: string | null
+  history_average: number
+  history_median: number
+  proposed: number[] // 12 entries
+  existing: (number | null)[] // 12 entries
+}
+
+export interface BudgetYearSuggestion {
+  year: number
+  method: BudgetSuggestionMethod
+  lookback_months: number
+  history_start: string // YYYY-MM-DD, first day of oldest month used
+  history_end: string // YYYY-MM-DD, first day of newest month used
+  rows: BudgetSuggestionRow[]
+}
+
+export interface BudgetPlanCellWrite {
+  category_id: string
+  month: number
+  amount: number | null // null clears the month-specific budget
+}
+
 export interface Asset {
   id: string
   user_id: string

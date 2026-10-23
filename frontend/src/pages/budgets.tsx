@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useDisplayLocale } from '@/hooks/use-display-locale'
 import { monthLabel } from '@/lib/month-utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -18,7 +19,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import type { Budget } from '@/types'
-import { Pencil, Trash2, Plus, Repeat, CalendarIcon } from 'lucide-react'
+import { Pencil, Trash2, Plus, Repeat, CalendarIcon, CalendarRange } from 'lucide-react'
 import { format } from 'date-fns'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { MonthPicker } from '@/components/ui/monthpicker'
@@ -149,7 +150,14 @@ export default function BudgetsPage() {
         section={t('budgets.title')}
         title={monthTitle}
         action={
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/budgets/plan"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-sm text-foreground transition-all hover:bg-muted/50"
+            >
+              <CalendarRange size={14} className="text-muted-foreground" /> {t('budgetPlan.title')}
+            </Link>
+            <div className="flex items-center gap-1">
             <button
               className="h-8 w-8 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:border-border hover:text-foreground transition-all text-base"
               onClick={() => {
@@ -188,6 +196,7 @@ export default function BudgetsPage() {
                 setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
               }}
             >›</button>
+            </div>
           </div>
         }
       />
