@@ -176,6 +176,18 @@ describe('BudgetPlanPage', () => {
     )
   })
 
+  it('puts the saved amount back when a save fails', async () => {
+    api.applyYearPlan.mockRejectedValue(new Error('network down'))
+    const { user } = await renderPage()
+    await user.click(screen.getByRole('tab', { name: 'Planned' }))
+    await user.clear(screen.getByLabelText('Planned amount for Food in Jan'))
+    await user.type(screen.getByLabelText('Planned amount for Food in Jan'), '999')
+    await user.tab()
+    await waitFor(() => expect(api.applyYearPlan).toHaveBeenCalledTimes(1))
+    // The field re-mounts, so query it again.
+    await waitFor(() => expect(screen.getByLabelText('Planned amount for Food in Jan')).toHaveValue(500))
+  })
+
   it('does not save when the value is unchanged or invalid', async () => {
     const { user } = await renderPage()
     await user.click(screen.getByRole('tab', { name: 'Planned' }))

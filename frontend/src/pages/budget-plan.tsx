@@ -110,16 +110,20 @@ function PlannedInput({
   value,
   label,
   onCommit,
+  resetKey,
 }: {
   value: number | null
   label: string
   onCommit: (amount: number | null) => void
+  /** Bumped after a failed save, so the field drops what was typed. */
+  resetKey: number
 }) {
   const saved = value == null ? '' : String(value)
   return (
     <input
-      // Re-mount when the saved value changes so the field reflects the server.
-      key={saved}
+      // Re-mount when the saved value changes, or a save failed, so the field
+      // always shows what the server holds.
+      key={`${saved}:${resetKey}`}
       type="number"
       min={0}
       step={1}
@@ -162,6 +166,7 @@ export default function BudgetPlanPage() {
   const [metric, setMetric] = useState<Metric>('both')
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [suggestOpen, setSuggestOpen] = useState(false)
+  const [saveFailures, setSaveFailures] = useState(0)
 
   const money = useMemo(
     () => new Intl.NumberFormat(numberLocale, { style: 'currency', currency, maximumFractionDigits: 0 }),
@@ -187,7 +192,10 @@ export default function BudgetPlanPage() {
       queryClient.invalidateQueries({ queryKey: ['budget-year-plan'] })
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
     },
-    onError: (err: unknown) => toast.error(extractApiError(err, t('common.error'))),
+    onError: (err: unknown) => {
+      setSaveFailures((n) => n + 1)
+      toast.error(extractApiError(err, t('common.error')))
+    },
   })
 
   const noBudget = t('budgetPlan.noBudget')
@@ -373,6 +381,7 @@ export default function BudgetPlanPage() {
           fmt={fmt}
           noBudget={noBudget}
           onSave={(categoryId, m, amount) => saveCell.mutate({ categoryId, month: m, amount })}
+          resetKey={saveFailures}
         />
       ) : (
         <MonthView plan={plan} year={year} month={month} fmt={fmt} noBudget={noBudget} />
@@ -392,9 +401,10 @@ interface GridViewProps {
   fmt: (n: number) => string
   noBudget: string
   onSave: (categoryId: string, month: number, amount: number | null) => void
+  resetKey: number
 }
 
-function GridView({ plan, year, metric, canWrite, monthNames, fmt, noBudget, onSave }: GridViewProps) {
+function GridView({ plan, year, metric, canWrite, monthNames, fmt, noBudget, onSave, resetKey }: GridViewProps) {
   const { t } = useTranslation()
   const editing = metric === 'planned' && canWrite
   const futures = MONTH_NUMBERS.map((m) => isFutureMonth(year, m))
@@ -467,6 +477,7 @@ function GridView({ plan, year, metric, canWrite, monthNames, fmt, noBudget, onS
                         value={cell.planned}
                         label={t('budgetPlan.cellLabel', { category: row.category_name, month: monthNames[i] })}
                         onCommit={(amount) => onSave(row.category_id, cell.month, amount)}
+                        resetKey={resetKey}
                       />
                     ) : (
                       renderCell(cell, futures[i])
