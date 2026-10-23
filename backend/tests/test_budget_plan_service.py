@@ -12,6 +12,7 @@ from app.models.budget import Budget
 from app.models.transaction import Transaction
 from app.schemas.budget import BudgetCreate, BudgetPlanCellWrite, BudgetYearApply
 from app.services.budget_plan_service import (
+    PlanConflict,
     PlanError,
     apply_year_plan,
     get_year_plan,
@@ -387,3 +388,39 @@ def test_apply_schema_rejects_negative_amounts_and_bad_months():
         BudgetPlanCellWrite(category_id=uuid.uuid4(), month=1, amount=Decimal("-1"))
     with pytest.raises(ValueError):
         BudgetPlanCellWrite(category_id=uuid.uuid4(), month=13, amount=Decimal("1"))
+
+
+@pytest.mark.asyncio
+async def test_apply_reports_a_conflict_when_a_concurrent_save_wins(
+    session, test_user, test_workspace, test_categories, monkeypatch
+):
+    from sqlalchemy.exc import IntegrityError
+
+    async def losing_commit():
+        raise IntegrityError(
+            "INSERT INTO budgets", {}, Exception("uq_budget_per_category_month_type")
+        )
+
+    monkeypatch.setattr(session, "commit", losing_commit)
+    with pytest.raises(PlanConflict):
+        await apply_year_plan(
+            session,
+            test_workspace.id,
+            test_user.id,
+            BudgetYearApply(
+                year=2027,
+                cells=[
+                    BudgetPlanCellWrite(
+                        category_id=test_categories[0].id, month=1, amount=Decimal("1")
+                    )
+                ],
+            ),
+        )
+    monkeypatch.undo()
+    assert (await session.execute(select(Budget))).scalars().all() == []
+
+
+def test_apply_schema_rejects_amounts_the_column_cannot_hold():
+    BudgetPlanCellWrite(category_id=uuid.uuid4(), month=1, amount=Decimal("9999999999999.99"))
+    with pytest.raises(ValueError):
+        BudgetPlanCellWrite(category_id=uuid.uuid4(), month=1, amount=Decimal("10000000000000"))

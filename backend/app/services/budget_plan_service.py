@@ -13,6 +13,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal, Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.app_clock import app_today
@@ -40,6 +41,10 @@ SEASONAL_WEIGHT = Decimal("0.5")
 
 class PlanError(ValueError):
     """Raised for requests the plan endpoints can't honour (maps to HTTP 400)."""
+
+
+class PlanConflict(RuntimeError):
+    """Another save created the same budget first (maps to HTTP 409)."""
 
 
 def _month_starts(year: int) -> list[date]:
@@ -283,5 +288,11 @@ async def apply_year_plan(
                 )
             )
             saved += 1
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        # Two saves raced to create the same (category, month) budget. Nothing
+        # from this request was written; the client can reload and retry.
+        await session.rollback()
+        raise PlanConflict("The budget plan changed while saving; reload and try again") from exc
     return BudgetYearApplyResult(saved=saved, deleted=deleted)

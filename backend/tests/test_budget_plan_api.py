@@ -81,6 +81,12 @@ async def test_apply_validation_errors(client, auth_headers, test_categories):
         json={"year": 2027, "cells": [{"category_id": cat, "month": 1, "amount": "-5"}]},
     )
     assert negative.status_code == 422
+    oversized = await client.put(
+        "/api/budgets/year-plan",
+        headers=auth_headers,
+        json={"year": 2027, "cells": [{"category_id": cat, "month": 1, "amount": "1e20"}]},
+    )
+    assert oversized.status_code == 422
     unknown = await client.put(
         "/api/budgets/year-plan",
         headers=auth_headers,

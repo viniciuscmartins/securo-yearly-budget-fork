@@ -99,12 +99,17 @@ class BudgetYearSuggestion(BaseModel):
     rows: list[BudgetSuggestionRow]
 
 
+# Largest value the budgets.amount column (NUMERIC(15, 2)) can hold. Checked
+# here so an oversized amount is a 422, not a database overflow and a 500.
+MAX_BUDGET_AMOUNT = Decimal("9999999999999.99")
+
+
 class BudgetPlanCellWrite(BaseModel):
     category_id: uuid.UUID
     month: int = Field(ge=1, le=12)
     # None removes the month-specific budget (a recurring default, if any,
     # applies again). Zero is a valid budget.
-    amount: Optional[Decimal] = Field(default=None, ge=0)
+    amount: Optional[Decimal] = Field(default=None, ge=0, le=MAX_BUDGET_AMOUNT)
 
 
 class BudgetYearApply(BaseModel):
